@@ -1,0 +1,79 @@
+# Video2PPT Notes
+
+Local-first utility that recursively scans a lecture folder, extracts audio from videos, transcribes with `faster-whisper`, asks a local Ollama-compatible LLM to create PPT-like HTML notes, performs lightweight credibility checks, and writes outputs beside each video.
+
+## Requirements
+
+- Python 3.10+
+- `ffmpeg` available on `PATH`
+- Optional but recommended: Ollama running locally
+- Python dependencies from `pyproject.toml`
+
+Install:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+Install FFmpeg on macOS:
+
+```bash
+brew install ffmpeg
+```
+
+Run Ollama, then pull a model:
+
+```bash
+ollama pull llama3.1:8b
+ollama serve
+```
+
+## Usage
+
+```bash
+video2notes /path/to/lecture/root --whisper-model small --llm-model llama3.1:8b
+```
+
+Useful options:
+
+```bash
+video2notes /lectures --skip-validation
+video2notes /lectures --force-transcribe
+video2notes /lectures --force-notes
+video2notes /lectures --dry-run
+video2notes /lectures --max-chunk-chars 9000
+```
+
+For each video, output files are created in the same folder:
+
+```text
+lecture.mp4
+lecture.audio.wav
+lecture.transcript.json
+lecture.notes.json
+lecture.validation.json
+lecture.notes.html
+```
+
+## Credibility Validation
+
+The validator is intentionally conservative. It checks whether generated note claims are grounded in the transcript and asks the local LLM to flag claims that need external verification. Without trusted reference material or web access, it will not pretend every fact is verified.
+
+Statuses:
+
+- `verified`: strongly supported by transcript
+- `likely`: plausible and related to transcript
+- `needs_review`: needs source material or expert review
+- `unsupported`: appears ungrounded
+
+## Token Optimization
+
+The pipeline reduces LLM usage by:
+
+- transcribing once and caching transcript JSON
+- sending compact timestamped transcript chunks
+- generating notes per chunk, then merging JSON locally
+- validating only extracted claims instead of re-sending full notes
+- reusing cached notes and validation unless forced

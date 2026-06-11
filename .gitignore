@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.env
+
+# Generated beside lecture videos
+*.audio.wav
+*.transcript.json
+*.notes.json
+*.validation.json
+*.notes.html

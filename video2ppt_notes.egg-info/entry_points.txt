@@ -1,0 +1,5 @@
+[console_scripts]
+video2notes = video2ppt.cli:main
+video2notes-aids = video2ppt.aids_cli:main
+video2notes-render = video2ppt.render_cli:main
+video2notes-validate = video2ppt.validate_cli:main

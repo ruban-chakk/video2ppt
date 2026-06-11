@@ -1,0 +1,2 @@
+certifi>=2024.0.0
+faster-whisper>=1.0.0
