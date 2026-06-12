@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import wave
 from pathlib import Path
 
 from .io_utils import newer_than, read_json, write_json
 from .models import TranscriptSegment
+from .progress import finish_progress, print_progress
 
 
 def transcribe_audio(
@@ -13,6 +15,7 @@ def transcribe_audio(
     force: bool = False,
 ) -> list[TranscriptSegment]:
     if not force and newer_than(transcript_path, audio_path):
+        print("    transcription: cached")
         return _segments_from_json(read_json(transcript_path))
 
     try:
@@ -30,21 +33,46 @@ def transcribe_audio(
         beam_size=5,
     )
 
-    payload = {
-        "language": info.language,
-        "language_probability": info.language_probability,
-        "segments": [
+    duration = get_wav_duration(audio_path)
+    segment_payload = []
+    last_percent = -1.0
+    for segment in segments:
+        text = segment.text.strip()
+        if not text:
+            continue
+        if duration:
+            percent = segment.end / duration * 100
+            if percent - last_percent >= 1 or percent >= 100:
+                print_progress("transcription", percent)
+                last_percent = percent
+        segment_payload.append(
             {
                 "start": round(segment.start, 2),
                 "end": round(segment.end, 2),
-                "text": segment.text.strip(),
+                "text": text,
             }
-            for segment in segments
-            if segment.text.strip()
-        ],
+        )
+    finish_progress("transcription")
+
+    payload = {
+        "language": info.language,
+        "language_probability": info.language_probability,
+        "segments": segment_payload,
     }
     write_json(transcript_path, payload)
     return _segments_from_json(payload)
+
+
+def get_wav_duration(path: Path) -> float | None:
+    try:
+        with wave.open(str(path), "rb") as handle:
+            frames = handle.getnframes()
+            rate = handle.getframerate()
+            if rate:
+                return frames / float(rate)
+    except (wave.Error, OSError):
+        return None
+    return None
 
 
 def _segments_from_json(payload: dict) -> list[TranscriptSegment]:

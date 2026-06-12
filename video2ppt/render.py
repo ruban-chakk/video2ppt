@@ -18,6 +18,7 @@ def render_html(notes_path: Path, validation_path: Path | None, output_path: Pat
         if isinstance(item, dict) and item.get("claim")
     }
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(build_html(notes, validation, validation_by_claim), encoding="utf-8")
 
 

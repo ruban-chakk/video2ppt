@@ -11,3 +11,5 @@ __pycache__/
 *.notes.json
 *.validation.json
 *.notes.html
+*.notes.chunks/
+*.notes.notes.chunks/

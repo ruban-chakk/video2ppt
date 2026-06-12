@@ -23,7 +23,7 @@ def generate_notes(
         return read_json(notes_path)
 
     chunks = chunk_transcript(transcript_segments, max_chunk_chars=max_chunk_chars)
-    chunk_cache_dir = notes_path.with_suffix(".notes.chunks")
+    chunk_cache_dir = notes_path.parent / f"{notes_path.stem}.chunks"
     chunk_cache_dir.mkdir(exist_ok=True)
 
     chunk_notes = []
@@ -33,7 +33,8 @@ def generate_notes(
             chunk_notes.append(read_json(chunk_path))
             continue
 
-        print(f"    note chunk {index}/{len(chunks)}")
+        percent = index / len(chunks) * 100
+        print(f"    note chunk {index}/{len(chunks)} ({percent:5.1f}%)")
         chunk_note = generate_chunk_notes_with_fallback(
             client,
             chunk_text,

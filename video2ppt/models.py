@@ -25,24 +25,28 @@ class VideoJob:
         return self.video_path.with_suffix("")
 
     @property
+    def work_dir(self) -> Path:
+        return self.video_path.parent / self.video_path.stem
+
+    @property
     def audio_path(self) -> Path:
-        return self.video_path.with_suffix(".audio.wav")
+        return self.work_dir / f"{self.video_path.stem}.audio.wav"
 
     @property
     def transcript_path(self) -> Path:
-        return self.video_path.with_suffix(".transcript.json")
+        return self.work_dir / f"{self.video_path.stem}.transcript.json"
 
     @property
     def notes_path(self) -> Path:
-        return self.video_path.with_suffix(".notes.json")
+        return self.work_dir / f"{self.video_path.stem}.notes.json"
 
     @property
     def aids_path(self) -> Path:
-        return self.video_path.with_suffix(".aids.json")
+        return self.work_dir / f"{self.video_path.stem}.aids.json"
 
     @property
     def validation_path(self) -> Path:
-        return self.video_path.with_suffix(".validation.json")
+        return self.work_dir / f"{self.video_path.stem}.validation.json"
 
     @property
     def html_path(self) -> Path:
