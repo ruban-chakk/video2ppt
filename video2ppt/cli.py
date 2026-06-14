@@ -28,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("paths", nargs="+", type=Path, help="Root folder(s) or video file(s).")
     parser.add_argument("--whisper-model", default="small", help="faster-whisper model size/name.")
     parser.add_argument("--transcribe-workers", type=int, default=1, help="Audio/transcription workers. Keep notes generation sequential.")
+    parser.add_argument("--audio-stall-timeout", type=int, default=600, help="Seconds of no FFmpeg progress before audio extraction fails.")
     parser.add_argument("--llm-model", default="llama3.1:8b", help="Local Ollama model name.")
     parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama base URL.")
     parser.add_argument("--llm-timeout", type=int, default=1800, help="Seconds to wait for each local LLM request.")
@@ -199,7 +200,12 @@ def discover_jobs(roots: list[Path]) -> list[VideoJob]:
 
 def prepare_transcript(args: Any, job: VideoJob) -> list[TranscriptSegment]:
     print("  extracting audio")
-    extract_audio(job.video_path, job.audio_path, force=args.force_audio)
+    extract_audio(
+        job.video_path,
+        job.audio_path,
+        force=args.force_audio,
+        stall_timeout=args.audio_stall_timeout,
+    )
 
     print(f"  transcribing with faster-whisper model: {args.whisper_model}")
     return transcribe_audio(
@@ -244,7 +250,12 @@ def prepare_transcripts_parallel(
 
 def prepare_transcript_worker(args: Any, job: VideoJob) -> tuple[list[TranscriptSegment], float]:
     start = time.perf_counter()
-    extract_audio(job.video_path, job.audio_path, force=args.force_audio)
+    extract_audio(
+        job.video_path,
+        job.audio_path,
+        force=args.force_audio,
+        stall_timeout=args.audio_stall_timeout,
+    )
     transcript = transcribe_audio(
         job.audio_path,
         job.transcript_path,

@@ -168,10 +168,14 @@ def merge_chunk_notes(title: str, chunk_notes: list[dict[str, Any]]) -> dict[str
     sections: list[dict[str, Any]] = []
     titles: list[str] = []
     for chunk in chunk_notes:
+        if not isinstance(chunk, dict):
+            continue
         chunk_title = str(chunk.get("title", "")).strip()
         if chunk_title:
             titles.append(chunk_title)
-        sections.extend(chunk.get("sections", []))
+        raw_sections = chunk.get("sections", [])
+        if isinstance(raw_sections, list):
+            sections.extend(raw_sections)
     return {
         "title": titles[0] if titles else title,
         "sections": sections,
@@ -183,10 +187,17 @@ def merge_notes(video_path: Path, chunk_notes: list[dict[str, Any]]) -> dict[str
     titles: list[str] = []
 
     for chunk in chunk_notes:
+        if not isinstance(chunk, dict):
+            continue
         title = str(chunk.get("title", "")).strip()
         if title:
             titles.append(title)
-        for raw_section in chunk.get("sections", []):
+        raw_sections = chunk.get("sections", [])
+        if isinstance(raw_sections, dict):
+            raw_sections = [raw_sections]
+        if not isinstance(raw_sections, list):
+            continue
+        for raw_section in raw_sections:
             section = normalize_section(raw_section)
             if section:
                 sections.append(section)
@@ -200,7 +211,15 @@ def merge_notes(video_path: Path, chunk_notes: list[dict[str, Any]]) -> dict[str
     }
 
 
-def normalize_section(raw: dict[str, Any]) -> dict[str, Any] | None:
+def normalize_section(raw: Any) -> dict[str, Any] | None:
+    if isinstance(raw, str):
+        text = compact_text(raw)
+        if not text:
+            return None
+        raw = {"title": "Concept", "summary": text}
+    if not isinstance(raw, dict):
+        return None
+
     title = compact_text(str(raw.get("title", "")).strip())
     summary = compact_text(str(raw.get("summary", "")).strip())
     if not title and not summary:
